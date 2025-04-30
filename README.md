@@ -1,38 +1,31 @@
-# Extended Redis with Static Cities Loader
+# Redis
 
-This directory contains files that extend the Redis image with functionality to load static city data from a JSON file.
+This directory provides a custom Redis container, designed as a submodule of the [Global City Streaming](https://github.com/mrjex/Global-City-Streaming) project. It is tightly integrated with the [Frontend Component](https://github.com/mrjex/Frontend-Global-City-Streaming), serving as a high-performance backend for city data retrieval.
 
-## Components
-
-- `Dockerfile` - Extends the Redis Alpine image with Python and our loader script
-- `entrypoint.sh` - Custom entry point that starts Redis and conditionally loads data
-- `load_to_redis.py` - Python script that loads city data into Redis
-- `requirements.txt` - Python dependencies for the loader script
 
 ## How It Works
 
 When the container starts:
 
-1. Redis server starts as normal
-2. The entry point script checks if the `LOAD_STATIC_CITIES` environment variable is set to "true"
-3. If true, it looks for the static-cities.json file at the path `/data/static-cities.json`
-4. If the file is found, it loads the data into Redis using the Python script
+1. The Redis server starts as normal.
+2. The entry point script checks if the `LOAD_STATIC_CITIES` environment variable is set to `true`.
+3. If enabled, it looks for the `static-cities.json` file at `/data/static-cities.json`
+4. If the file is found, the loader script imports the data into Redis.
 
 ## Data Structure in Redis
 
 - Each city is stored as a Redis hash under the key `static_city:{city_name}`
 - The list of all city names is stored as a Redis list under the key `static_cities:all`
 
-## How to Enable
+## Integration & Usage
 
-To enable the loading of static cities data, make these changes in your docker-compose.yml:
+This Redis container is intended to be used as part of the Global City Streaming system, providing rapid city data access for the Frontend Component. To enable static city data loading, update your `docker-compose.yml` as follows in [Global City Streaming](https://github.com/mrjex/Global-City-Streaming):
 
-1. Update the `redis` service to use the build context instead of the image:
+1. Use the build context for the `redis` service:
    ```yaml
    redis:
      build:
        context: ./redis
-     # ... rest of configuration
    ```
 
 2. Add the environment variable:
@@ -47,17 +40,3 @@ To enable the loading of static cities data, make these changes in your docker-c
      - redis_data:/data
      - ./dev-endpoints/static-cities-data/static-cities.json:/data/static-cities.json:ro
    ```
-
-## Accessing City Data
-
-To get data for a specific city from Redis:
-
-```
-HGETALL static_city:London
-```
-
-To get the list of all cities:
-
-```
-LRANGE static_cities:all 0 -1
-``` 
