@@ -17,16 +17,29 @@ STATIC_CITY_PREFIX = "static:city:"
 def load_static_cities():
     """Load static cities data from JSON file to Redis using the enhanced structure"""
     try:
-        json_file_path = '/data/static-cities.json'
-        print(f"Loading static cities from {json_file_path}")
+        # Get the file path from environment variable
+        json_file_path = os.getenv('STATIC_CITIES_PATH')
+        if not json_file_path:
+            print("Warning: STATIC_CITIES_PATH environment variable not set. Cannot 'static-cties.json'")
+            return
         
         # Connect to Redis
         r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
         r.ping()  # Test connection
         
         # Load and parse the JSON file
-        with open(json_file_path, 'r') as f:
-            city_data = json.load(f)
+        try:
+            with open(json_file_path, 'r') as f:
+                city_data = json.load(f)
+        except FileNotFoundError:
+            print(f"Warning: Static cities file not found at {json_file_path}. Skipping static data loading.")
+            return
+        except json.JSONDecodeError:
+            print(f"Warning: Could not parse static cities file at {json_file_path}. File may be corrupted.")
+            return
+        except Exception as e:
+            print(f"Warning: Unexpected error loading static cities file: {str(e)}")
+            return
         
         # Store data for each city using pipeline for efficiency
         pipe = r.pipeline()
